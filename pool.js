@@ -10,7 +10,7 @@ function getLogger(name, level) {
   level = level || process.env.work_pool_log || "info";
 
   try {
-    log = require('log4js')().getLogger('work_pool');
+    log = require('log4js')().getLogger(name);
     log.setLevel(level);
   } catch(e) {
     log = { "trace": (level === "trace") ? console.log : function() {}
