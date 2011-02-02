@@ -29,10 +29,10 @@ function Pool (work_func) {
   var self = this;
   events.EventEmitter.call(self);
 
-  if(typeof work_func !== 'function')
-    throw new Error("Required function to perform the work");
-
   self.work = work_func;
+  if(typeof self.work !== "undefined" && typeof self.work !== 'function')
+    throw new Error("Must provide a function as the worker for the pool");
+
   self.queue = {run: {}, incoming: []};
   self.size = 10;
   self.timeout = 0;
@@ -121,6 +121,9 @@ function Pool (work_func) {
   self.run_task = function(task) {
     self.log.debug('Running task: ' + sys.inspect(task));
 
+    if(!self.work)
+      throw new Error("Work function is not defined");
+
     if(self.timeout)
       task.timeout_id = setTimeout(self.timed_out, self.timeout, task);
 
@@ -141,6 +144,9 @@ Pool.prototype.add = function() {
   var job_id = self.new_job_id();
   var params = Array.prototype.slice.apply(arguments);
   var label = "Job " + job_id + ' ' + JSON.stringify(params);
+
+  if(!self.work)
+    throw new Error("Work function is not defined");
 
   var arity_without_callback = self.work.length - 1;
   if(params.length !== arity_without_callback)
