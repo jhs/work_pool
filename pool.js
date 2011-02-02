@@ -3,19 +3,26 @@
 
 var sys = require('sys')
   , events = require('events')
-  , LOG
   ;
 
-try {
-  LOG = require('log4js')().getLogger('work_pool');
-  LOG.setLevel(process.env.work_pool_log || "info");
-} catch(e) {
-  LOG = { "debug": function() {}
-        , "info" : console.log
-        , "warn" : console.log
-        , "error": console.log
-        , "fatal": console.log
-        }
+function getLogger(name, level) {
+  var log;
+  level = level || process.env.work_pool_log || "info";
+
+  try {
+    log = require('log4js')().getLogger('work_pool');
+    log.setLevel(level);
+  } catch(e) {
+    log = { "trace": (level === "trace") ? console.log : function() {}
+          , "debug": (level === "trace" || level === "debug") ? console.log : function() {}
+          , "info" : console.log
+          , "warn" : console.log
+          , "error": console.log
+          , "fatal": console.log
+          }
+  }
+
+  return log;
 }
 
 function Pool (work_func) {
@@ -29,6 +36,7 @@ function Pool (work_func) {
   self.queue = {run: {}, incoming: []};
   self.size = 10;
   self.timeout = 0;
+  self.log = getLogger('work_pool.Pool');
 
   var greatest_job_id = 0;
   self.new_job_id = function() {
@@ -45,22 +53,22 @@ function Pool (work_func) {
 
   var waiting_for_drain = false;
   self.on('update', function() {
-    //LOG.debug('update queue:\n' + sys.inspect(self.queue)); // XXX This statement destroys the CPU and locks things up.
+    //self.log.debug('update queue:\n' + sys.inspect(self.queue)); // XXX This statement destroys the CPU and locks things up.
     var job_ids = Object.keys(self.queue.run);
 
     if(self.queue.incoming.length === 0) {
-      LOG.debug('No work to do');
-      LOG.debug('waiting='+sys.inspect(waiting_for_drain) + ' running='+job_ids.length);
+      self.log.debug('No work to do');
+      self.log.debug('waiting='+sys.inspect(waiting_for_drain) + ' running='+job_ids.length);
       if(waiting_for_drain && job_ids.length === 0) {
         waiting_for_drain = false;
         self.emit('drain');
       }
     } else {
-      LOG.debug('Work to do');
+      self.log.debug('Work to do');
       waiting_for_drain = true;
 
       if(job_ids.length >= self.size) {
-        LOG.debug('No room for a new task');
+        self.log.debug('No room for a new task');
       } else {
         // There is room for a new task.
         var task = self.queue.incoming.shift();
@@ -74,8 +82,8 @@ function Pool (work_func) {
 
   self.task_callback = function(task, er) {
     if(task.timed_out) {
-      if(er) LOG.debug('Ignoring timed-out ' + task.label + "\nWith error:\n" + er);
-      else   LOG.debug('Ignoring timed-out ' + task.label);
+      if(er) self.log.debug('Ignoring timed-out ' + task.label + "\nWith error:\n" + er);
+      else   self.log.debug('Ignoring timed-out ' + task.label);
       return;
     } else if(task.timeout_id) {
       clearTimeout(task.timeout_id);
@@ -111,7 +119,7 @@ function Pool (work_func) {
   }
 
   self.run_task = function(task) {
-    LOG.debug('Running task: ' + sys.inspect(task));
+    self.log.debug('Running task: ' + sys.inspect(task));
 
     if(self.timeout)
       task.timeout_id = setTimeout(self.timed_out, self.timeout, task);
