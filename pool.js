@@ -116,6 +116,7 @@ function Pool (work_func) {
       throw new Error(task.label + " already timed out");
 
     var timeout_er = new Error("TIMEOUT: " + task.label);
+    timeout_er.timeout = true;
 
     try {
       self.task_callback(task, timeout_er);
