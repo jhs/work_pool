@@ -137,7 +137,10 @@ function Pool (work_func) {
     try {
       self.work.apply(self, task.params);
     } catch (er) {
+      if(task.timeout_id)
+        clearTimeout(task.timeout_id);
       self.emit('error', er, task);
+      self.emit('done', task);
     }
   }
 
