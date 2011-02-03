@@ -36,6 +36,7 @@ function Pool (work_func) {
   self.queue = {run: {}, incoming: []};
   self.size = 10;
   self.timeout = 0;
+  self.virgin = true;
   self.log = getLogger('work_pool.Pool');
 
   var greatest_job_id = 0;
@@ -147,6 +148,10 @@ Pool.prototype.add = function() {
 
   if(!self.work)
     throw new Error("Work function is not defined");
+
+  if(self.virgin && (! self.timeout))
+    self.log.warn("Adding tasks with no timeout. A callback bug in your code could make the pool fill and then freeze");
+  self.virgin = false;
 
   var arity_without_callback = self.work.length - 1;
   if(params.length !== arity_without_callback)
