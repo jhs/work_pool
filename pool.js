@@ -37,6 +37,7 @@ function Pool (work_func) {
   self.size = 10;
   self.timeout = 0;
   self.virgin = true;
+  self.completions = {"error":0, "success":0};
   self.log = getLogger('work_pool.Pool');
 
   var greatest_job_id = 0;
@@ -51,6 +52,10 @@ function Pool (work_func) {
     delete self.queue.run[task.id];
     self.emit('update');
   })
+
+  // Track how many successes and failures there will be.
+  self.on('error'  , function() { self.completions.error   += 1 });
+  self.on('success', function() { self.completions.success += 1 });
 
   var waiting_for_drain = false;
   self.on('update', function() {
