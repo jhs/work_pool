@@ -34,11 +34,21 @@ function Pool (work_func) {
     throw new Error("Must provide a function as the worker for the pool");
 
   self.queue = {run: {}, incoming: []};
-  self.size = 10;
   self.timeout = 0;
   self.virgin = true;
   self.completions = {"error":0, "success":0};
   self.log = getLogger('work_pool.Pool');
+
+  self._size = 10;
+  self.__defineGetter__('size', function get_size() { return self._size });
+  self.__defineSetter__('size', function get_size(size) {
+    for(; self._size < size; self._size += 1) {
+      // Size increase; run an update to give a task in the queue a chance.
+      self.emit('update');
+    }
+
+    return self._size = size;
+  });
 
   var greatest_job_id = 0;
   self.new_job_id = function() {
