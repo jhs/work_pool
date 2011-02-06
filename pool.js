@@ -81,7 +81,11 @@ function Pool (work_func) {
       }
     } else {
       self.log.debug('Work to do');
-      waiting_for_drain = true;
+
+      var total_task_size = job_ids.length + self.queue.incoming.length;
+      var drain_trigger = self.drain_on || 1;
+      if(total_task_size > drain_trigger)
+        waiting_for_drain = true;
 
       if(job_ids.length >= self.size) {
         self.log.debug('No room for a new task');
