@@ -90,7 +90,7 @@ function Pool (work_func) {
 
       var total_task_size = job_ids.length + self.queue.incoming.length;
       var drain_trigger = self.drain_on || 1;
-      if(total_task_size > drain_trigger)
+      if(total_task_size >= drain_trigger)
         waiting_for_drain = true;
 
       if(job_ids.length >= self.size) {
