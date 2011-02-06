@@ -38,6 +38,7 @@ function Pool (work_func) {
   self.virgin = true;
   self.completions = {"error":0, "success":0};
   self.log = getLogger('work_pool.Pool');
+  self.last_drain = null;
 
   self._size = 10;
   self.__defineGetter__('size', function get_size() { return self._size });
@@ -78,9 +79,14 @@ function Pool (work_func) {
       if(waiting_for_drain && job_ids.length === 0) {
         waiting_for_drain = false;
         self.emit('drain');
+        self.last_drain = new Date();
       }
     } else {
       self.log.debug('Work to do');
+
+      // For the very first run before a drain, the timestamp starts when the very first job starts.
+      if(!self.last_drain)
+        self.last_drain = new Date();
 
       var total_task_size = job_ids.length + self.queue.incoming.length;
       var drain_trigger = self.drain_on || 1;
