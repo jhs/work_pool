@@ -155,7 +155,7 @@ function Pool (work_func) {
       task.timeout_id = setTimeout(self.timed_out, self.timeout, task);
 
     try {
-      self.work.apply(self, task.params);
+      self.work.apply(task, task.params);
     } catch (er) {
       if(task.timeout_id)
         clearTimeout(task.timeout_id);
@@ -186,7 +186,7 @@ Pool.prototype.add = function() {
   if(params.length !== arity_without_callback)
     throw new Error(label + " requires " + arity_without_callback + " parameters");
 
-  var task = {id:job_id, label:label, timed_out:false};
+  var task = {id:job_id, label:label, timed_out:false, pool:self};
   task.params = params.concat(function(er) { return self.task_callback(task, er) });
 
   self.queue.incoming.push(task);
