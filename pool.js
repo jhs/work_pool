@@ -92,6 +92,8 @@ function Pool (work_func) {
       var drain_trigger = self.drain_on || 1;
       if(total_task_size >= drain_trigger)
         waiting_for_drain = true;
+      if(self.size_warning && total_task_size == self.size_warning)
+        self.log.warn(total_task_size + " tasks in  " + self.label);
 
       if(job_ids.length >= self.size) {
         self.log.debug('No room for a new task');
